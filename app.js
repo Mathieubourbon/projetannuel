@@ -4,7 +4,10 @@ var fs = require('fs'),
     stream = require('stream'),
     argv = require('yargs').argv,
     dgram = require('dgram'),
-    http = require('http');
+    http = require('http'),
+    express = require('express');
+
+var app = express()
 
 var HOST = '0.0.0.0';
 var PORT = 6969;
@@ -23,11 +26,14 @@ client.on('message', function (message, rinfo) {
     console.log('Message from: ' + rinfo.address + ':' + rinfo.port +' - ' + message);
     if(message == 'discovery'){
       CLIENTS.push(rinfo.address);
+      console.log(CLIENTS.length);
+      for(var i=0; i<CLIENTS.length; i++){
+        console.log(CLIENTS[i]);
+      }
       broadcastResponse(rinfo.address);
     }
 });
 client.bind(PORTBT);
-
 function broadcastResponse(ip){
   var client = new net.Socket();
   client.connect(PORT, ip, function() {
@@ -46,11 +52,8 @@ function broadcastResponse(ip){
 net.createServer(function(sock) {
     console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
     sock.on('data', function(data) {
-      console.log('DATA: ' + data);
-      if(data == 'Discovery'){
-        CLIENTS.push(sock.remoteAddress);
-      }
-      sock.destroy();
+      console.log('DATA: \n' + data);
+      parsing(data);
     });
     sock.on('close', function(data) {
         console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
@@ -58,11 +61,18 @@ net.createServer(function(sock) {
 
 }).listen(PORT, HOST);
 
+//Parsing des données reçu
+function parsing(data){
+
+}
+
 console.log('Server listening on ' + HOST +':'+ PORT);
 
 //Interface web
-var server = http.createServer(function(req, res) {
-  res.writeHead(200);
-  res.end('Salut tout le monde !');
-});
-server.listen(8080);
+app.get('/', function (req, res) {
+  res.render('index.ejs', {clients: CLIENTS});
+})
+
+app.listen(8080, function () {
+  console.log('Example app listening on port 3000!')
+})
